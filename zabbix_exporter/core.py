@@ -33,7 +33,7 @@ def prepare_regex(key_pattern):
 
 class ZabbixCollector(object):
 
-    def __init__(self, base_url, login, password, verify_tls=True, timeout=None, **options):
+    def __init__(self, base_url, login, password, token, verify_tls=True, timeout=None, **options):
         self.options = options
         self.key_patterns = {prepare_regex(metric['key']): metric
                              for metric in options.get('metrics', [])}
@@ -50,7 +50,10 @@ class ZabbixCollector(object):
             api_seconds_total.inc(r.elapsed.total_seconds())
         self.zapi.session.hooks = {'response': measure_api_request}
 
-        self.zapi.login(login, password)
+        if self.token:
+            self.zapi.login(api_token=token)
+        else:
+            self.zapi.login(login, password)
 
         self.host_mapping = {row['hostid']: row['name']
                              for row in self.zapi.host.get(output=['hostid', 'name'])}

@@ -17,12 +17,13 @@ def validate_settings(settings):
     if not settings['url']:
         click.echo('Please provide Zabbix API URL', err=True)
         sys.exit(1)
-    if not settings['login']:
-        click.echo('Please provide Zabbix username', err=True)
-        sys.exit(1)
-    if not settings['password']:
-        click.echo('Please provide Zabbix account password', err=True)
-        sys.exit(1)
+    if not settings['token']:
+        if not settings['login']:
+            click.echo('Please provide Zabbix username', err=True)
+            sys.exit(1)
+        if not settings['password']:
+            click.echo('Please provide Zabbix account password', err=True)
+            sys.exit(1)
     return True
 
 
@@ -33,6 +34,7 @@ def validate_settings(settings):
 @click.option('--url', help='HTTP URL for zabbix instance')
 @click.option('--login', help='Zabbix username')
 @click.option('--password', help='Zabbix password')
+@click.option('--token', help='Zabbix API token')
 @click.option('--verify-tls/--no-verify', help='Enable TLS cert verification [default: true]', default=True)
 @click.option('--timeout', help='API read/connect timeout', default=5)
 @click.option('--verbose', is_flag=True)
@@ -85,10 +87,12 @@ def cli(**settings):
     if settings['verbose']:
         base_logger.setLevel(logging.DEBUG)
 
+    auth_method = {'token': settings['token']} if settings['token'] else {'login': settings['login'],
+                                                                          'password': settings['password']}
+
     collector = ZabbixCollector(
         base_url=settings['url'].rstrip('/'),
-        login=settings['login'],
-        password=settings['password'],
+        **auth_method,
         verify_tls=settings['verify_tls'],
         timeout=settings['timeout'],
         **exporter_config
